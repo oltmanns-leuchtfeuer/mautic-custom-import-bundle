@@ -9,19 +9,21 @@ use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Mautic\UserBundle\Entity\User;
 
 class CustomImportIntegration extends AbstractIntegration
 {
     /**
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         // should be the name of the integration
         return 'CustomImport';
     }
 
-    public function getDisplayName()
+    public function getDisplayName(): string
     {
         return 'Custom Import';
     }
@@ -29,7 +31,7 @@ class CustomImportIntegration extends AbstractIntegration
     /**
      * @return string
      */
-    public function getAuthenticationType()
+    public function getAuthenticationType(): string
     {
         /* @see \Mautic\PluginBundle\Integration\AbstractIntegration::getAuthenticationType */
         return 'none';
@@ -38,7 +40,7 @@ class CustomImportIntegration extends AbstractIntegration
     /**
      * @return string
      */
-    public function getIcon()
+    public function getIcon(): string
     {
         return 'plugins/MauticCustomImportBundle/Assets/img/icon.png';
     }
@@ -48,7 +50,7 @@ class CustomImportIntegration extends AbstractIntegration
      * @param array                                             $data
      * @param string                                            $formArea
      */
-    public function appendToForm(&$builder, $data, $formArea)
+    public function appendToForm(&$builder, $data, $formArea): void
     {
         if ($formArea == 'features') {
             $builder->add(
@@ -67,8 +69,40 @@ class CustomImportIntegration extends AbstractIntegration
                     ],
                 ]
             );
+            
+// Build user choices for the dropdown
+$users = $this->em->getRepository(User::class)
+    ->createQueryBuilder('u')
+    ->select('u.id, u.firstName, u.lastName, u.username, u.email')
+    ->orderBy('u.firstName', 'ASC')
+    ->addOrderBy('u.lastName', 'ASC')
+    ->getQuery()
+    ->getArrayResult();
 
-            $builder->add(
+$ownerChoices = [];
+foreach ($users as $u) {
+    $name  = trim(($u['firstName'] ?? '') . ' ' . ($u['lastName'] ?? ''));
+    $label = $name !== '' ? $name : ($u['username'] ?? ($u['email'] ?? ('User #'.$u['id'])));
+    $ownerChoices[sprintf('%s (#%d)', $label, (int) $u['id'])] = (int) $u['id'];
+}
+
+
+$builder->add(
+    'owner_id',
+    ChoiceType::class,
+    [
+        'label'       => 'mautic.custom.import.owner_id',
+        'label_attr'  => ['class' => 'control-label'],
+        'choices'     => $ownerChoices,
+        'placeholder' => 'mautic.custom.import.owner_id.placeholder',
+        'required'    => true,
+        'attr'        => [
+            'class' => 'form-control',
+            'data-placeholder' => $this->translator->trans('mautic.custom.import.owner_id.placeholder'),
+        ],
+    ]
+);
+$builder->add(
                 'path_to_directory_csv',
                 TextType::class,
                 [

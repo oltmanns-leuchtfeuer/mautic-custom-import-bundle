@@ -11,14 +11,14 @@
 
 namespace MauticPlugin\MauticCustomImportBundle\Command;
 
-use Mautic\CoreBundle\Command\ModeratedCommand;
+use Symfony\Component\Console\Command\Command;
 use MauticPlugin\MauticCustomImportBundle\Exception\InvalidImportException;
 use MauticPlugin\MauticCustomImportBundle\Import\CustomImportFactory;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class ImportFromDirectoryCommand extends ModeratedCommand
+class ImportFromDirectoryCommand extends Command
 {
     /**
      * @var CustomImportFactory
@@ -38,10 +38,11 @@ class ImportFromDirectoryCommand extends ModeratedCommand
      */
     public function __construct(CustomImportFactory $customImportFactory, TranslatorInterface $translator)
     {
+        parent::__construct();
         $this->customImportFactory = $customImportFactory;
         $this->translator = $translator;
-        parent::__construct();
-    }
+    // parent constructor removed for Mautic 5; locking deps are DI'd into parent in core
+}
 
     /**
      * {@inheritdoc}
@@ -60,11 +61,6 @@ class ImportFromDirectoryCommand extends ModeratedCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $key = __CLASS__;
-        if (!$this->checkRunStatus($input, $output, $key)) {
-            return 0;
-        }
-
         try {
             $files = $this->customImportFactory->createImportFromDirectory();
             $output->writeln(
@@ -76,8 +72,6 @@ class ImportFromDirectoryCommand extends ModeratedCommand
         } catch (InvalidImportException $importException) {
             $output->writeln(sprintf("<error>%s</error>", $importException->getMessage()));
         }
-        $this->completeRun();
-
         return 0;
     }
 }

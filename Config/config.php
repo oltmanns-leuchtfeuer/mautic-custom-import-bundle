@@ -51,6 +51,7 @@ return [
                 'class'     => \MauticPlugin\MauticCustomImportBundle\Import\ImportFromDirectory::class,
                 'arguments' => [
                     'mautic.lead.model.import',
+                    'doctrine.orm.entity_manager',
                 ],
             ],
             'mautic.custom.import.parallel' => [

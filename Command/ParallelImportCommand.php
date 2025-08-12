@@ -11,7 +11,7 @@
 
 namespace MauticPlugin\MauticCustomImportBundle\Command;
 
-use Mautic\CoreBundle\Command\ModeratedCommand;
+use Symfony\Component\Console\Command\Command;
 use Mautic\CoreBundle\Helper\ProgressBarHelper;
 use MauticPlugin\MauticCustomImportBundle\Exception\InvalidImportException;
 use MauticPlugin\MauticCustomImportBundle\Import\CustomImportFactory;
@@ -20,9 +20,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Translation\TranslatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class ParallelImportCommand extends ModeratedCommand
+class ParallelImportCommand extends Command
 {
 
     /**
@@ -43,10 +43,11 @@ class ParallelImportCommand extends ModeratedCommand
      */
     public function __construct(CustomImportFactory $customImportFactory, TranslatorInterface $translator)
     {
+        parent::__construct();
         $this->translator          = $translator;
         $this->customImportFactory = $customImportFactory;
-        parent::__construct();
-    }
+    // parent constructor removed for Mautic 5; locking deps are DI'd into parent in core
+}
 
     /**
      * {@inheritdoc}

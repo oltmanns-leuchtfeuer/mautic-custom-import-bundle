@@ -2,7 +2,7 @@
   "name": "mtcextendee/mautic-custom-import-bundle",
   "type": "mautic-plugin",
   "require": {
-    "mautic/composer-plugin": "^1.0"
+    "mautic/composer-plugin": "^1.0",
+    "php": ">=8.1"
   }
 }
-
