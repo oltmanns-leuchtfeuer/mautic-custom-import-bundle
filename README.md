@@ -1,58 +1,113 @@
 # MauticCustomImportBundle
 
-This plugin allow 
+Import contacts from a filesystem directory using Mautic’s native importer, optionally run imports in parallel from the CLI, and bulk-remove tags on demand.
 
-- create imports from CSV files from directory
-- run parallel import process by command
-- remove tags by command
+## Features
+
+- Create imports from CSV files located in a server directory
+- Run imports **in parallel** via CLI (robust PHP CLI discovery; works on php-fpm hosts)
+- Remove tags from contacts via CLI
+- **New:** Select an **Import Owner** in the integration settings  
+
+## Compatibility
+
+- Mautic 5.x 
+
 
 ## Support
 
-https://mtcextendee.com/plugins
+<https://mtcextendee.com/plugins>
 
 ## Installation
 
-### Command line
-- `composer require mtcextendee/mautic-custom-import-bundle`
-- `php bin/console mautic:plugins:reload`
--  Go to /s/plugins and setup CustomImport integration
+### Composer (recommended)
 
-### Manual 
-- Download last version https://github.com/mtcextendee/mautic-custom-import-bundle/releases
-- Unzip files to plugins/MauticCustomImportBundle
-- Clear cache (app/cache/prod/)
-- Go to /s/plugins/reload
-- Setup CustomImport integration
+```bash
+composer require mtcextendee/mautic-custom-import-bundle
+php bin/console mautic:plugins:reload
+```
+Then open **Settings → Plugins → Custom Import** and configure the integration.
+
+### Manual
+
+1. Download the latest release from GitHub Releases.
+2. Unzip into: `plugins/MauticCustomImportBundle`
+3. Clear cache:
+   ```bash
+   php bin/console cache:clear
+   ```
+4. In Mautic, go to **Settings → Plugins → Reload Plugins**, then open **Custom Import** and configure.
+
+## Configuration
+
+Open **Settings → Plugins → Custom Import** and review:
+
+- **Template from existing import**  
+  Choose a previous (successful) Mautic import to reuse its parser settings and field mapping.
+
+- **Path to directory with CSV files**  
+  Absolute server path where your CSV files are placed (e.g. `/var/www/example.com/htdocs/var/import`).  
+  The command scans this folder and creates a standard Mautic import per CSV.
+
+- **Import records limit**  
+  Batch size used by the CLI importer for each worker.
+
+- **Select Import Owner (new)**  
+  Choose a Mautic user. Each created import row will have:
+  - `created_by` = selected user’s ID  
+  - `created_by_user` = the selected user’s display name  
+  (Also applied to `properties.defaults.owner`.)
+
+- **Tags to Remove (for the remove-tags command)**  
+  Select tags to strip from contacts before your next import run.
 
 ## Usage
 
-### Create imports from directory
+### Create imports from a directory
 
-Command: `php bin/console mautic:import:directory`
+```bash
+php bin/console mautic:import:directory
+```
 
-Setup in plugin settings 
-- **Template from existed import** - it's import from history which is used as template. Especially config (especially parsers config and matched contact fields)
-- **Path to directory with CSV files**. It's server path where you can store unlimited CSV files
+Reads the configured folder and creates one queued Mautic import per CSV using the template’s mapping and parser config.
 
-Command read this directory and create standard import from CSV with settings from template.
+### Run parallel import
 
-### Run parallel import process
+```bash
+php bin/console mautic:import:parallel
+```
 
-Command: `php bin/console mautic:import:parallel`
+Notes:
 
-First, increase **parallel_import_limit** in app/config/local.php. Don't forgot clear cache (app/cache/prod/)
-This option allow run parallel import process by command
+- The plugin spawns multiple workers up to Mautic’s **parallel import limit** (configure in `app/config/local.php` / `config/local.php` depending on your setup).
+- Works on servers that primarily run **php-fpm**. You can force a specific PHP binary by setting:
+  ```bash
+  export MAUTIC_PHP_BIN=/usr/bin/php
+  ```
+  The plugin otherwise auto-detects (`PhpExecutableFinder`, `PHP_BINARY`, common paths, then `php` from `PATH`).
 
-Each command in parallel processes import 1000 contacts by default. You can change it in plugin settings (Import records limit)
+### Remove tags via CLI
 
-### Remove tags by command
+```bash
+php bin/console mautic:remove:tags
+```
 
-Command: `php bin/console mautic:remove:tags`
+Removes the tags you configured in the integration. Helpful when your next CSV import needs a clean slate.
 
-If you want tag your contacts by import, then before import you are able to remove tag.
-Just setup tags in plugin settings and call command
+## Troubleshooting
 
+- **“php does not exist” (parallel command):**  
+  The plugin now tries several strategies to find PHP. If needed, set `MAUTIC_PHP_BIN=/path/to/php` for the web/CLI user.
+
+- **Owner not applied:**  
+  Ensure **Select Import Owner** is saved in the integration. New `imports` rows should show the selected owner in both `created_by` and `created_by_user`. Historical rows are unchanged.
+
+- **Permissions:**  
+  The web/CLI user must have read/write access to the CSV directory and Mautic’s `var/` (cache/logs/import dir).
+
+- **Logs:**  
+  Check `var/logs/` for import-related errors.
 
 ## Credits
 
-<div>Icons made by <a href="https://www.flaticon.com/authors/chanut" title="Chanut">Chanut</a> from <a href="https://www.flaticon.com/"                 title="Flaticon">www.flaticon.com</a>
+Icons by [Chanut](https://www.flaticon.com/authors/chanut) on [Flaticon](https://www.flaticon.com/).
